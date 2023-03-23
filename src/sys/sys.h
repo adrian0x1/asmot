@@ -22,8 +22,8 @@ typedef struct user_s {
 
 // TODO: Add documentation
 i32 sys_info(sysinfo_t* sys);
+u64 boot_time(void);
 // TODO: Implement
-i32 boot_time(void);
 i32 users(user_t* users);
 
 #endif  // ASMOT_SYS_H
