@@ -35,18 +35,23 @@ int battery_info(ibattery_t *ibat) {
                            POWER_INTERFACE BATTERY_SUPPLY "/technology",
                            POWER_INTERFACE BATTERY_SUPPLY "/status"};
     char *values[] = {ibat->manufacturer, ibat->model_name, ibat->technology, ibat->status};
+    size_t files_len = sizeof files / sizeof(files[0]);
+
     sbattery_t battery;
     sensors_battery(&battery);
     memset(ibat, 0, sizeof(*ibat));
-    int ret[3];
+    int ret[files_len];
+
     if (battery.present) {
-        for (int i = 0; i < sizeof files / sizeof(files[0]); i++) {
+        for (int i = 0; i < files_len; i++) {
             ret[i] = cat(files[i], values[i], IBATTERY_STRLEN);
         }
     }
 
-    if (ret[0] || ret[1] || ret[2]) {
-        return (-1);
+    for (int i = 0; i < files_len; i++) {
+        if (ret[i]) {
+            return (-1);
+        }
     }
     return 0;
 }
