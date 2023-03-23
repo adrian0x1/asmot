@@ -20,11 +20,11 @@ typedef struct sysinfo_s {
 } sysinfo_t;
 
 typedef struct suser_s {
-    char name[UT_NAMESIZE];
-    char terminal[UT_LINESIZE];
-    char host[UT_HOSTSIZE];
-    u64 started;
-    pid_t pid;
+    char name[UT_NAMESIZE];     /* username */
+    char terminal[UT_LINESIZE]; /* terminal name suffix*/
+    char host[UT_HOSTSIZE];     /* hostname for remote login */
+    u64 started;                /* time entry was made (in seconds) */
+    pid_t pid;                  /* PID of the login process */
 } suser_t;
 
 // TODO: Add documentation
