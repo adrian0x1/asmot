@@ -1,4 +1,5 @@
 build
+.git
 spec.txt
 .vscode
 TODO
