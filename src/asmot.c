@@ -1,5 +1,6 @@
 #include <arpa/inet.h> /* inet_ntop function */
 #include <errno.h>
+#include <fcntl.h>
 #include <netinet/in.h> /* struct sockaddr_in */
 #include <signal.h>     /* need to clean up before exiting on SIGINT */
 #include <stdio.h>
@@ -37,9 +38,9 @@
         exit(-1);                                                \
     }
 
-#define chk_warn(tcp_syscall, id)                                \
-    if (tcp_syscall < 0) {                                       \
-        fprintf(stderr, "[ERROR] " id " %s\n", strerror(errno)); \
+#define chk_warn(fn, id)                                        \
+    if (fn < 0) {                                               \
+        fprintf(stderr, "[WARN] " id " %s\n", strerror(errno)); \
     }
 
 /* helper function to handle arguments */
@@ -81,22 +82,28 @@ static int *sock_fds[FD_COUNT]; /* shared FDs */
 
 /* handle SIGINT*/
 void cleanup(int sig) {
-    /* Try to close both the connected socket and the server socket before exiting. */
-    chk_warn(close(*(sock_fds[CONN_SK])), "<close:conn_sk>");
-    chk_warn(close(*(sock_fds[SERV_SK])), "<close:serv_sk>");
-    fprintf(stderr, "\nExited.\n");
+    /* check if the conn fd is opened and close it */
+    if (fcntl(*(sock_fds[CONN_SK]), F_GETFD) > 0) {
+        chk_fail(close(*(sock_fds[CONN_SK])), "<close:conn_sk>");
+    }
+    /* close the server fd as well before exiting */
+    chk_fail(close(*(sock_fds[SERV_SK])), "<close:serv_sk>");
+
+    /* let the user know that the file descriptors have been closed */
+    fprintf(stdout, "\rSockets have been closed. Exiting...\n");
     exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv) {
-    unsigned short port;           /* server port */
-    int serv_sk;                   /* server socket */
-    int conn_sk;                   /* connected socket */
-    struct sockaddr_in serv_addr;  /* server address */
-    struct sockaddr_in conn_addr;  /* remote connection address */
-    char data[DATA_MAX];           /* data exchange buffer */
-    socklen_t addr_len;            /* length of stored address on accept */
-    char ip_addr[INET_ADDRSTRLEN]; /* connected socket IP address */
+    unsigned short port;              /* server port */
+    int serv_sk;                      /* server socket */
+    int conn_sk;                      /* connected socket */
+    struct sockaddr_in serv_addr;     /* server address */
+    struct sockaddr_in conn_addr;     /* remote connection address */
+    char data[DATA_MAX];              /* data exchange buffer */
+    socklen_t addrlen;                /* integer containing the size of conn_addr (in bytes) */
+    char ipv4_addr[INET_ADDRSTRLEN];  /* connected socket IPv4 address */
+    char ipv6_addr[INET6_ADDRSTRLEN]; /* connected socket IPv6 address */
 
     /* put the socket addresses into sock_fds */
     sock_fds[SERV_SK] = &serv_sk;
@@ -105,7 +112,7 @@ int main(int argc, char **argv) {
     /* handle arguments */
     handle_args(&argc, &argv, &port);
 
-    /* set the SIGINT handler */
+    /* handle SIGINT */
     signal(SIGINT, cleanup);
 
     /* echo port */
@@ -116,8 +123,11 @@ int main(int argc, char **argv) {
 
     /* define the server address information */
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY); /* INADDR_ANY doesn't need to be converted really*/
     serv_addr.sin_port = htons(port);
+
+    /* set the socket options */
+    chk_fail(setsockopt(serv_sk, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)), "<setsockopt>");
 
     /* bind the socket to the address */
     chk_fail(bind(serv_sk, (struct sockaddr *)&serv_addr, sizeof(serv_addr)), "<bind>");
@@ -125,12 +135,12 @@ int main(int argc, char **argv) {
     /* start listening for connections */
     chk_fail(listen(serv_sk, BACKLOG), "<listen>");
 
-    /* set the address length */
-    addr_len = sizeof(conn_sk);
+    /* set the initial address length */
+    addrlen = sizeof(conn_addr);
 
     /* HTTP response */
     char *response =
-        /* http headers */
+        /* headers */
         "HTTP/1.1 200 OK\r\n"
         "content-type: text/html; charset=UTF-8\r\n"
         "server: proto\r\n"
@@ -140,21 +150,23 @@ int main(int argc, char **argv) {
     /* handle connections */
     for (;;) {
         /* accept connections */
-        chk_fail(conn_sk = accept(serv_sk, (struct sockaddr *)&serv_addr, &addr_len), "<accept>");
+        chk_fail(conn_sk = accept(serv_sk, (struct sockaddr *)&conn_addr, &addrlen), "<accept>");
 
         /* receive the message from the connected socket */
         chk_fail(recv(conn_sk, data, DATA_MAX, 0), "<recv>");
 
-        /* log received data */
-        printf("[INFO] Received request at %s\n%s", timestamp("%Y-%m-%d %H:%M:%S"), data);
+        /* Log request */
+        fprintf(stdout, "[INFO] Got request from %s ::: %s\n%s",
+                inet_ntop(AF_INET, &conn_addr.sin_addr.s_addr, ipv4_addr, addrlen),
+                timestamp("%Y-%m-%d %H:%M:%S"), data);
 
-        /* send the data to client */
+        /* Send the data to client */
         chk_fail(send(conn_sk, response, strlen(response), 0), "<send>");
 
-        /* close the connection */
+        /* Close the connection */
         close(conn_sk);
     }
 
-    /* this shouldn't be reached. */
+    /* This shouldn't be reached. */
     return EXIT_FAILURE;
 }
