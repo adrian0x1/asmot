@@ -3,3 +3,6 @@ build
 spec.txt
 .vscode
 TODO
+.DS_Store
+._.DS_Store
+
