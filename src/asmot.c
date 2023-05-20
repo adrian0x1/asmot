@@ -465,7 +465,7 @@ int main(void)
 
     Server server;
     serverInit(&server);
-    serverStatic(&server, "src/webclient");
+    serverStatic(&server, "src/asmot-webclient/dist");
 
     for (int i = 0; i < ARRAY_SIZE(routingTable); i++)
         serverGet(&server, (char*)routingTable[i][0], (void*)routingTable[i][1]);
