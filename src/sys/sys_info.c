@@ -45,6 +45,6 @@ i32 sys_info(sysinfo_t *sys) {
         {MACHINE_INFO_INTERFACE "product_name", sys->product_name}};
 
     for (u8 i = 0; i < sizeof machine / sizeof(machine[0]); i++) {
-        cat(machine[i][KEY], machine[i][VALUE], SYS_BUFLEN);
+        cat(machine[i][KEY], machine[i][VALUE], SYSINFO_BUFLEN);
     }
 }

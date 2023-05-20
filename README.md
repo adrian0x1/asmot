@@ -1,2 +1,1 @@
 # *asmot* - sytem monitoring tool
-

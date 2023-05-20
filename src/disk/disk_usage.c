@@ -3,7 +3,8 @@
 
 #include "disk.h"
 
-i32 disk_usage(sdiskusage_t *du, const char *path) {
+i32 disk_usage(sdiskusage_t* du, const char* path)
+{
     struct statvfs stats;
     if (statvfs(path, &stats) != 0)
         return 1;
