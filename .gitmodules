@@ -1,0 +1,3 @@
+[submodule "src/asmot-webclient"]
+	path = src/asmot-webclient
+	url = https://github.com/adrian0x1/asmot-webclient
