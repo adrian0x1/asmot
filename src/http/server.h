@@ -22,8 +22,12 @@
 
 #define DEFAULT_PORT 7000
 #define BACKLOG 5
-// #define BUFSIZE 16384 /* 16K */
-#define BUFSIZE (128 * 1024) /* 128K */
+// #define BUFSIZE (128 * 1024) /* 128K */
+// This is the buffer size for the server. Files get read into it before
+// being send()-ed (including images which might be bigger than it)
+// React build is more than 128K and was causing a segmentation fault.
+// Might be a good idea to make it bigger (for images and the like)
+#define BUFSIZE (256 * 1024) // 256K
 
 typedef struct Server {
     unsigned short port;

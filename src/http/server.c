@@ -99,7 +99,7 @@ void serverListen(Server* server, const char* port)
         close(server->connection);
 
         requestDestroy(&server->req);
-        responseDestroy(&server->res);
+		responseDestroy(&server->res);
     }
     routerDestroy(&server->router);
     freeaddrinfo(server->address);

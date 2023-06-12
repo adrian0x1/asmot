@@ -97,7 +97,7 @@ void responseSendFile(Response* res, const char* filepath)
 
     char sizestr[64];
     sprintf(sizestr, "%ld", size);
-
+	printf("Size: %ld\n", size);
     responseSetHeader(res, "content-length", sizestr);
     if (res->statusCode == NONE)
         res->statusCode = HTTP_OK;
