@@ -111,6 +111,8 @@ char* responseToBuffer(Response* res, char* buffer, size_t bufsize)
     // TODO: Caching and compression if supported by client
     responseSetHeader(res, "server", "asmot_v0.1.1");
     responseSetHeader(res, "connection", "close");
+	// Acces Policy
+	responseSetHeader(res, "Access-Control-Allow-Origin", "*");
 
     const int STATUS_CODE = 0, STATUS_PHRASE = 1;
     char* statusPhrase;
